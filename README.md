@@ -4,6 +4,12 @@ CLS stage (DTI Classification): Predicting the potential binding ability between
 
 REG stage (DTA Regression): Further affinity regression prediction is performed on the molecules selected in the CLS stage for sorting candidate molecules.
 
+## Create Environment
+
+```bash
+pip install -r requirements.txt
+```
+
 ## How to Run
 From the capsule's root directory, simply execute:
 
