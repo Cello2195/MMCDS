@@ -1,32 +1,20 @@
 import os
 import random
-import sys
-# os.environ['CUDA_VISIBLE_DEVICES'] = "1"
-import math
 import numpy as np
-import torch.optim as optim
 import torch
 import torch.nn as nn
 from torch_geometric.data import DataLoader
 from torch.utils.data.dataset import ConcatDataset
 import torch.nn.functional as F
-import argparse
 from copy import deepcopy
 from tqdm import tqdm
 import datetime
 import pandas as pd
 from collections import defaultdict
 
-from metrics import get_cindex, get_rm2
 from model_clip_full import ColdDTA
-# from model_clip_transformer import ColdDTA
-# from model_clip_mamba import MambaDTA
-# from model_clip_mamba_ori import MambaDTA
-# from model_clip_mamba_ht import MambaDTA
 from utils import *
-from log.train_logger import TrainLogger
 from torch_geometric.data import InMemoryDataset
-import time
 import matplotlib.pyplot as plt
 
 class DRPDataset(InMemoryDataset):

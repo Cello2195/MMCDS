@@ -1,6 +1,3 @@
-import argparse
-import math
-import os
 import os.path as osp
 import random
 from copy import deepcopy
@@ -17,7 +14,6 @@ from torch_geometric.data import InMemoryDataset
 import torch_geometric.transforms as T
 from tqdm import tqdm
 import pdb
-from model import ColdDTA
 
 fdef_name = osp.join(RDConfig.RDDataDir, 'BaseFeatures.fdef')
 chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(fdef_name)

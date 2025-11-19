@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import sys
 
 import torch
 import torch.nn as nn
@@ -7,8 +6,6 @@ import torch.nn.functional as F
 import torch_geometric.nn as gnn
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
-from torch_geometric.nn import global_mean_pool
-from torch_geometric import data as DATA
 import clip
 from utils import *
 

@@ -4,7 +4,6 @@ import numpy as np
 from math import sqrt
 from scipy import stats
 import matplotlib.pyplot as plt
-import pdb
 
 class BestMeter(object):
     """Computes and stores the best value"""

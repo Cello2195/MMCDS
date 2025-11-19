@@ -1,7 +1,6 @@
 import pandas as pd
 import torch
 import numpy as np
-from scipy import stats
 
 def pearson(y,f):
     rp = np.corrcoef(y, f)[0,1]

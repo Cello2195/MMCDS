@@ -1,6 +1,5 @@
 import torch
-from torch.utils.data import Dataset, DataLoader
-import random
+from torch.utils.data import Dataset
 import numpy as np
 CHARISOSMISET = {"#": 29, "%": 30, ")": 31, "(": 1, "+": 32, "-": 33, "/": 34, ".": 2,
                  "1": 35, "0": 3, "3": 36, "2": 4, "5": 37, "4": 5, "7": 38, "6": 6,

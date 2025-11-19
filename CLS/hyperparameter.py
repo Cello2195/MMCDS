@@ -1,4 +1,3 @@
-import torch
 from datetime import datetime
 class hyperparameter():
     def __init__(self):
