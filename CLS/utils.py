@@ -8,14 +8,6 @@ from torch.autograd.function import once_differentiable
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-import ext_loader
-
-ext_module = ext_loader.load_ext('_ext', [
-    'sigmoid_focal_loss_forward', 'sigmoid_focal_loss_backward',
-    'softmax_focal_loss_forward', 'softmax_focal_loss_backward'
-])
-
-
 class SigmoidFocalLossFunction(Function):
 
     @staticmethod
