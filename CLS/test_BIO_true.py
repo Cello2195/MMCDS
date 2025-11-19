@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-@Time:Created on 2020/7/05
-@author: Qichang Zhao
-"""
 import random
 import os
 from model import AttentionDTI
@@ -140,7 +135,6 @@ if __name__ == "__main__":
     random.seed(SEED)
     torch.manual_seed(SEED)
     torch.cuda.manual_seed_all(SEED)
-    # torch.backends.cudnn.deterministic = True
 
     """init hyperparameters"""
     hp = hyperparameter()
@@ -148,9 +142,7 @@ if __name__ == "__main__":
     """Load preprocessed data."""
     DATASET = "BIO_true"
     K_top = 3
-    # DATASET = "DrugBank"
-    # DATASET = "Davis"
-    print("Train in " + DATASET)
+    print("Test in " + DATASET)
     if DATASET == "DrugBank":
         weight_CE = None
         dir_input = ('./data/{}.txt'.format(DATASET))
@@ -199,11 +191,10 @@ if __name__ == "__main__":
         with open(test_dir_input, "r") as f:
             test_data_list = f.read().strip().split('\n')
         print("load finished")
-    # pdb.set_trace()
+
     # random shuffle
     print("data shuffle")
     train_val_dataset = shuffle_dataset(train_val_data_list, SEED)
-    # test_dataset = shuffle_dataset(test_data_list, SEED)
 
     Accuracy_List_stable, AUC_List_stable, AUPR_List_stable, Recall_List_stable, Precision_List_stable = [], [], [], [], []
 
@@ -211,10 +202,7 @@ if __name__ == "__main__":
     test_dataset = CustomDataSet(test_data_list)
     train_dataset, valid_dataset = torch.utils.data.random_split(train_val_dataset, [int(0.8 * len(train_val_dataset)), len(train_val_dataset) - int(0.8 * len(train_val_dataset))])
 
-    # TVdataset_len = len(TVdataset)
-    # valid_size = int(0.2 * TVdataset_len)
     train_size = len(train_dataset)
-    # train_dataset, valid_dataset = torch.utils.data.random_split(TVdataset, [train_size, valid_size])
     train_dataset_load = DataLoader(train_dataset, batch_size=hp.Batch_size, shuffle=True, num_workers=0,drop_last=False,
                                     collate_fn=collate_fn)
     valid_dataset_load = DataLoader(valid_dataset, batch_size=hp.Batch_size, shuffle=False, num_workers=0,drop_last=False,
@@ -235,28 +223,12 @@ if __name__ == "__main__":
         else:
             weight_p += [p]
     """load trained model"""
-    model.load_state_dict(torch.load("BIO_true/20240603095818_best/valid_best_checkpoint_30.pth"))
+    model.load_state_dict(torch.load("checkpoints/BIO_true/checkpoint.pth"))
 
     criterion = SigmoidFocalLoss(gamma = 7.5, alpha = 0.95, reduction = 'mean')
-    # criterion = SigmoidFocalLoss(gamma = 2.5, alpha = 0.75)
-    # print(model)
-    
-    save_path = "./" + DATASET + "/" + dateStr() + "/"
-    note = ''
-    writer = SummaryWriter(log_dir=save_path, comment=note)
 
-    """Output files."""
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    file_results = save_path+'The_results_of_whole_dataset.txt'
-
-    with open(file_results, 'w') as f:
-        hp_attr = '\n'.join(['%s:%s' % item for item in hp.__dict__.items()])
-        f.write(hp_attr + '\n')
-
-    # _,_,_,_,_,_ = test_model(test_dataset_load, save_path, DATASET, Loss, dataset="Test",lable="untrain",save=False)
-    """Start training."""
-    print('Training...')
+    """Start testing."""
+    print('Testing...')
 
     model.eval()
     Y, P, S = [], [], []
@@ -286,51 +258,16 @@ if __name__ == "__main__":
                 Y.extend(test_labels)
                 P.extend(test_predictions)
                 S.extend(test_scores)
-        pdb.set_trace()
-        # Precision_dev = precision_score(Y, P)
         Recall_dev = recall_score(Y, P)
         Accuracy_dev = accuracy_score(Y, P)
-        # AUC_dev = roc_auc_score(Y, S)
         tpr, fpr, _ = precision_recall_curve(Y, S)
         PRC_dev = auc(fpr, tpr)
-        f1_dev = f1_score(Y, P, average='binary')  # 对于二分类问题使用 'binary'
-        # test_loss_a_epoch = np.average(test_losses_in_epoch)  
-        # avg_test_loss.append(test_loss)
+        f1_dev = f1_score(Y, P, average='binary')
 
         Y = np.array(Y)
         P = np.array(P)
         conf_matrix = confusion_matrix(Y, P)
         print("Confusion Matrix:")
         print(conf_matrix)
-
-
-        print_msg = (# f'test_loss: {test_loss_a_epoch:.5f} ' +
-                        # f'test_AUC: {AUC_dev:.5f} ' +
-                        f'test_PRC: {PRC_dev:.5f} ' +
-                        f'test_Accuracy: {Accuracy_dev:.5f} ' +
-                        # f'test_Precision: {Precision_dev:.5f} ' +
-                        f'test_Recall: {Recall_dev:.5f} ' +
-                        f'test_F1: {f1_dev:.5f} ')
-        print(print_msg)
-
-    trainset_test_stable_results,_,_,_,_,_ = test_model(train_dataset_load, save_path, DATASET, Loss, dataset="Train", lable="stable")
-    validset_test_stable_results,_,_,_,_,_ = test_model(valid_dataset_load, save_path, DATASET, Loss, dataset="Valid", lable="stable")
-    testset_test_stable_results,Accuracy_test, Precision_test, Recall_test, AUC_test, PRC_test = \
-        test_model(test_dataset_load, save_path, DATASET, Loss, dataset="Test", lable="stable")
-    AUC_List_stable.append(AUC_test)
-    Accuracy_List_stable.append(Accuracy_test)
-    AUPR_List_stable.append(PRC_test)
-    Recall_List_stable.append(Recall_test)
-    Precision_List_stable.append(Precision_test)
-    with open(save_path + "The_results_of_whole_dataset.txt", 'a') as f:
-        f.write("Test the stable model" + '\n')
-        f.write(trainset_test_stable_results + '\n')
-        # f.write(validset_test_stable_results + '\n')
-        f.write(testset_test_stable_results + '\n')
-
-    show_result(DATASET, "stable",
-                Accuracy_List_stable, Precision_List_stable, Recall_List_stable,
-                AUC_List_stable, AUPR_List_stable,save_path)
-
 
 

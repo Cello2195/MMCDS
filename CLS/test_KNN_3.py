@@ -41,7 +41,6 @@ def show_result(DATASET,lable,Accuracy_List,Precision_List,Recall_List,AUC_List,
     print('PRC(std):{:.4f}({:.4f})'.format(PRC_mean, PRC_var))
 
 def load_tensor(file_name, dtype):
-    # return [dtype(d).to(hp.device) for d in np.load(file_name + '.npy', allow_pickle=True)]
     return [dtype(d) for d in np.load(file_name + '.npy', allow_pickle=True)]
 
 def test_precess(model,pbar,LOSS):
@@ -140,9 +139,8 @@ if __name__ == "__main__":
     hp = hyperparameter()
 
     """Load preprocessed data."""
-    DATASET = "BIO_true"
-    K_top = 3
-    print("Train in " + DATASET)
+    DATASET = "BIO_KNN_3"
+    print("Test in " + DATASET)
     if DATASET == "DrugBank":
         weight_CE = None
         dir_input = ('./data/{}.txt'.format(DATASET))
@@ -181,32 +179,32 @@ if __name__ == "__main__":
         with open(dir_input, "r") as f:
             data_list = f.read().strip().split('\n')
         print("load finished")
-    elif DATASET == "BIO_true":
-        weight_CE = torch.FloatTensor([0.2, 0.8]).cuda()
-        train_val_dir_input = ('./data/{}_train_val_KNN_{}.txt'.format(DATASET, K_top))
-        test_dir_input = ('./data/{}_test_KNN_{}.txt'.format(DATASET, K_top))
+    elif DATASET == "BIO_right":
+        train_val_dir_input = ('./data/{}_train_val.txt'.format(DATASET))
+        test_dir_input = ('./data/{}_test.txt'.format(DATASET))
         print("load data")
         with open(train_val_dir_input, "r") as f:
-            train_val_data_list = f.read().strip().split('\n')
+            train_data_list = f.read().strip().split('\n')
         with open(test_dir_input, "r") as f:
             test_data_list = f.read().strip().split('\n')
         print("load finished")
-
+    
     # random shuffle
     print("data shuffle")
-    train_val_dataset = shuffle_dataset(train_val_data_list, SEED)
-    test_dataset = shuffle_dataset(test_data_list, SEED)
+    if DATASET == "BIO":
+        train_dataset = shuffle_dataset(train_data_list, SEED)
+        test_dataset = shuffle_dataset(test_data_list, SEED)
+    elif DATASET.startswith("BIO_KNN_"):
+        dataset = shuffle_dataset(data_list, SEED)
+        train_dataset, test_dataset = torch.utils.data.random_split(dataset, [int(0.8 * len(dataset)), len(dataset) - int(0.8 * len(dataset))])
 
     Accuracy_List_stable, AUC_List_stable, AUPR_List_stable, Recall_List_stable, Precision_List_stable = [], [], [], [], []
 
-    train_dataset = CustomDataSet(train_val_dataset)
+    train_dataset = CustomDataSet(train_dataset)
     test_dataset = CustomDataSet(test_dataset)
-    train_dataset, valid_dataset = torch.utils.data.random_split(train_val_dataset, [int(0.8 * len(train_val_dataset)), len(train_val_dataset) - int(0.8 * len(train_val_dataset))])
 
     train_size = len(train_dataset)
     train_dataset_load = DataLoader(train_dataset, batch_size=hp.Batch_size, shuffle=True, num_workers=0,drop_last=False,
-                                    collate_fn=collate_fn)
-    valid_dataset_load = DataLoader(valid_dataset, batch_size=hp.Batch_size, shuffle=False, num_workers=0,drop_last=False,
                                     collate_fn=collate_fn)
     test_dataset_load = DataLoader(test_dataset, batch_size=hp.Batch_size, shuffle=False, num_workers=0,drop_last=False,
                                     collate_fn=collate_fn)
@@ -224,158 +222,16 @@ if __name__ == "__main__":
         else:
             weight_p += [p]
     """load trained model"""
+    model.load_state_dict(torch.load("checkpoints/BIO_KNN_3/checkpoint.pth"))
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=hp.Learning_rate)
-    Loss = nn.CrossEntropyLoss(weight=weight_CE)
     criterion = SigmoidFocalLoss(gamma = 7.5, alpha = 0.95, reduction = 'mean')
-    
-    save_path = "./" + DATASET + "/" + dateStr() + "/"
-    note = ''
-    writer = SummaryWriter(log_dir=save_path, comment=note)
 
-    """Output files."""
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    file_results = save_path+'The_results_of_whole_dataset.txt'
+    """Start testing."""
+    print('Testing...')
 
-    with open(file_results, 'w') as f:
-        hp_attr = '\n'.join(['%s:%s' % item for item in hp.__dict__.items()])
-        f.write(hp_attr + '\n')
-
-    
-    early_stopping = EarlyStopping(savepath = save_path,patience=hp.Patience, verbose=True, delta=0)
-    """Start training."""
-    print('Training...')
-    start = timeit.default_timer()
-
-    for epoch in range(1, hp.Epoch + 1):
-        train_pbar = tqdm(
-            enumerate(
-                BackgroundGenerator(train_dataset_load)),
-            total=len(train_dataset_load))
-        """train"""
-        train_losses_in_epoch = []
-        model.train()
-        Y, P, S = [], [], []
-        epoch_len = len(str(hp.Epoch))
-        for train_i, train_data in train_pbar:
-            '''data preparation '''
-            train_compounds, train_proteins, train_labels = train_data
-            train_compounds = train_compounds.cuda()
-            train_proteins = train_proteins.cuda()
-            train_labels = train_labels.cuda()
-            
-            optimizer.zero_grad()
-            
-            train_scores = model(train_compounds, train_proteins)
-            pdb.set_trace()
-            train_loss = Loss(train_scores, train_labels)
-            train_losses_in_epoch.append(train_loss.item())
-            train_loss.backward()
-            optimizer.step()
-
-            train_labels = train_labels.to('cpu').data.numpy()
-            train_scores = F.softmax(train_scores, 1).to('cpu').data.numpy()
-            train_predictions = np.argmax(train_scores, axis=1)
-            train_scores = train_scores[:, 1]
-
-            Y.extend(train_labels)
-            P.extend(train_predictions)
-            S.extend(train_scores)
-            
-        Precision_dev = precision_score(Y, P)
-        Recall_dev = recall_score(Y, P)
-        Accuracy_dev = accuracy_score(Y, P)
-        AUC_dev = roc_auc_score(Y, S)
-        f1_dev = f1_score(Y, P, average='binary')
-        tpr, fpr, _ = precision_recall_curve(Y, S)
-        PRC_dev = auc(fpr, tpr)
-
-        Y = np.array(Y)
-        P = np.array(P)
-        conf_matrix = confusion_matrix(Y, P)
-        print("Confusion Matrix:")
-        print(conf_matrix)
-
-        train_loss_a_epoch = np.average(train_losses_in_epoch)
-        writer.add_scalar('Train Loss', train_loss_a_epoch, epoch)
-
-        print_msg = (f'[{epoch:>{epoch_len}}/{hp.Epoch:>{epoch_len}}] ' +
-                        f'train_loss: {train_loss_a_epoch:.5f} ' +
-                        f'train_AUC: {AUC_dev:.5f} ' +
-                        f'train_PRC: {PRC_dev:.5f} ' +
-                        f'train_Accuracy: {Accuracy_dev:.5f} ' +
-                        f'train_Precision: {Precision_dev:.5f} ' +
-                        f'train_Recall: {Recall_dev:.5f} ' +
-                        f'valid_F1: {f1_dev:.5f} ')
-        print(print_msg)
-
-        """valid"""
-        valid_pbar = tqdm(
-            enumerate(
-                BackgroundGenerator(valid_dataset_load)),
-            total=len(valid_dataset_load))
-        valid_losses_in_epoch = []
-        model.eval()
-        Y, P, S = [], [], []
-        with torch.no_grad():
-            for valid_i, valid_data in valid_pbar:
-                '''data preparation '''
-                valid_compounds, valid_proteins, valid_labels = valid_data
-
-                valid_compounds = valid_compounds.cuda()
-                valid_proteins = valid_proteins.cuda()
-                valid_labels = valid_labels.cuda()
-
-                valid_scores = model(valid_compounds, valid_proteins)
-                valid_loss = Loss(valid_scores, valid_labels)
-                valid_labels = valid_labels.to('cpu').data.numpy()
-                valid_scores = F.softmax(valid_scores, 1).to('cpu').data.numpy()
-                valid_predictions = np.argmax(valid_scores, axis=1)
-                valid_scores = valid_scores[:, 1]
-
-                valid_losses_in_epoch.append(valid_loss.item())
-                Y.extend(valid_labels)
-                P.extend(valid_predictions)
-                S.extend(valid_scores)
-
-        Precision_dev = precision_score(Y, P)
-        Recall_dev = recall_score(Y, P)
-        Accuracy_dev = accuracy_score(Y, P)
-        AUC_dev = roc_auc_score(Y, S)
-        tpr, fpr, _ = precision_recall_curve(Y, S)
-        PRC_dev = auc(fpr, tpr)
-        f1_dev = f1_score(Y, P, average='binary')
-        valid_loss_a_epoch = np.average(valid_losses_in_epoch)  
-
-        Y = np.array(Y)
-        P = np.array(P)
-        conf_matrix = confusion_matrix(Y, P)
-        print("Confusion Matrix:")
-        print(conf_matrix)
-
-
-        print_msg = (f'[{epoch:>{epoch_len}}/{hp.Epoch:>{epoch_len}}] ' +
-                        f'valid_loss: {valid_loss_a_epoch:.5f} ' +
-                        f'valid_AUC: {AUC_dev:.5f} ' +
-                        f'valid_PRC: {PRC_dev:.5f} ' +
-                        f'valid_Accuracy: {Accuracy_dev:.5f} ' +
-                        f'valid_Precision: {Precision_dev:.5f} ' +
-                        f'valid_Recall: {Recall_dev:.5f} ' +
-                        f'valid_F1: {f1_dev:.5f} ')
-
-        writer.add_scalar('Valid Loss', valid_loss_a_epoch, epoch)
-        writer.add_scalar('Valid AUC', AUC_dev, epoch)
-        writer.add_scalar('Valid AUPR', PRC_dev, epoch)
-        writer.add_scalar('Valid Accuracy', Accuracy_dev, epoch)
-        writer.add_scalar('Valid Precision', Precision_dev, epoch)
-        writer.add_scalar('Valid Recall', Recall_dev, epoch)
-        writer.add_scalar('Learn Rate', optimizer.param_groups[0]['lr'], epoch)
-
-        print(print_msg)
-
-        early_stopping(-f1_dev, model, epoch)
-
+    model.eval()
+    Y, P, S = [], [], []
+    with torch.no_grad():
         """test"""
         test_pbar = tqdm(
             enumerate(
@@ -393,7 +249,6 @@ if __name__ == "__main__":
                 test_labels = test_labels.cuda()
 
                 test_scores = model(test_compounds, test_proteins)
-                test_loss = Loss(test_scores, test_labels)
                 test_labels = test_labels.to('cpu').data.numpy()
                 test_scores = F.softmax(test_scores, 1).to('cpu').data.numpy()
                 test_predictions = np.argmax(test_scores, axis=1)
@@ -413,32 +268,3 @@ if __name__ == "__main__":
         conf_matrix = confusion_matrix(Y, P)
         print("Confusion Matrix:")
         print(conf_matrix)
-
-
-        print_msg = (f'[{epoch:>{epoch_len}}/{hp.Epoch:>{epoch_len}}] ' +
-                        f'test_PRC: {PRC_dev:.5f} ' +
-                        f'test_Accuracy: {Accuracy_dev:.5f} ' +
-                        f'test_Recall: {Recall_dev:.5f} ' +
-                        f'test_F1: {f1_dev:.5f} ')
-        print(print_msg)
-
-    trainset_test_stable_results,_,_,_,_,_ = test_model(train_dataset_load, save_path, DATASET, Loss, dataset="Train", lable="stable")
-    validset_test_stable_results,_,_,_,_,_ = test_model(valid_dataset_load, save_path, DATASET, Loss, dataset="Valid", lable="stable")
-    testset_test_stable_results,Accuracy_test, Precision_test, Recall_test, AUC_test, PRC_test = \
-        test_model(test_dataset_load, save_path, DATASET, Loss, dataset="Test", lable="stable")
-    AUC_List_stable.append(AUC_test)
-    Accuracy_List_stable.append(Accuracy_test)
-    AUPR_List_stable.append(PRC_test)
-    Recall_List_stable.append(Recall_test)
-    Precision_List_stable.append(Precision_test)
-    with open(save_path + "The_results_of_whole_dataset.txt", 'a') as f:
-        f.write("Test the stable model" + '\n')
-        f.write(trainset_test_stable_results + '\n')
-        f.write(testset_test_stable_results + '\n')
-
-    show_result(DATASET, "stable",
-                Accuracy_List_stable, Precision_List_stable, Recall_List_stable,
-                AUC_List_stable, AUPR_List_stable,save_path)
-
-
-

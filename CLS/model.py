@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-@Time:Created on 2020/8/23 10:10
-@author: Qichang Zhao
-@Filename: model.py
-@Software: PyCharm
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

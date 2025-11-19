@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-@Time:Created on 2020/7/05
-@author: Qichang Zhao
-"""
 import random
 import os
 from model import AttentionDTI
@@ -46,7 +41,6 @@ def show_result(DATASET,lable,Accuracy_List,Precision_List,Recall_List,AUC_List,
     print('PRC(std):{:.4f}({:.4f})'.format(PRC_mean, PRC_var))
 
 def load_tensor(file_name, dtype):
-    # return [dtype(d).to(hp.device) for d in np.load(file_name + '.npy', allow_pickle=True)]
     return [dtype(d) for d in np.load(file_name + '.npy', allow_pickle=True)]
 
 def test_precess(model,pbar,LOSS):
@@ -140,13 +134,12 @@ if __name__ == "__main__":
     random.seed(SEED)
     torch.manual_seed(SEED)
     torch.cuda.manual_seed_all(SEED)
-    # torch.backends.cudnn.deterministic = True
 
     """init hyperparameters"""
     hp = hyperparameter()
 
-    model_path = "./BIO_KNN_3/20240603095401_best/valid_best_checkpoint_10.pth"
-    model_path = "./BIO_true/20240603095818_best/valid_best_checkpoint_30.pth"
+    model_path = "checkpoints/BIO_KNN_3/checkpoint.pth"
+    model_path = "checkpoints/BIO_true/checkpoint.pth"
 
     """Load preprocessed data."""
     if model_path.startswith("./BIO_KNN_3/"):
