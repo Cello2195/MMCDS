@@ -261,5 +261,6 @@ if __name__ == "__main__":
         Y = np.array(Y)
         P = np.array(P)
         conf_matrix = confusion_matrix(Y, P)
-        print("Confusion Matrix:")
+        print("Confusion Matrix in Fig. 2a:")
         print(conf_matrix)
+        print("\n")

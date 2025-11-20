@@ -262,7 +262,13 @@ if __name__ == "__main__":
         Y = np.array(Y)
         P = np.array(P)
         conf_matrix = confusion_matrix(Y, P)
-        print("Confusion Matrix:")
+        S_ = 0.5 + 0.5 * ((np.array(S) - np.min(S)) / (np.max(S) - np.min(S)))
+        S_ = sorted(S_, reverse=True)
+        print("Confusion Matrix in Fig. 2b:")
         print(conf_matrix)
+        print("\n")
 
-
+        print("Prediction Confidence Level in Fig. 2c")
+        for idx, item in enumerate(S_):
+            print(f"Molecule {idx+1}: {item}")
+        print("\n")
