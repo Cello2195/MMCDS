@@ -126,8 +126,8 @@ def dateStr():
         .replace("_", "")
     )
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 if __name__ == "__main__":
     """select seed"""
     SEED = 42

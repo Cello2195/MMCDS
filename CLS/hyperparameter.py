@@ -4,7 +4,7 @@ class hyperparameter():
         self.current_time = datetime.now().strftime('%b%d_%H-%M-%S')
         self.Learning_rate = 5e-7
         self.Epoch = 200
-        self.Batch_size = 16
+        self.Batch_size = 4
         self.Resume = False
         self.Patience = 50
         self.FC_Dropout = 0.5

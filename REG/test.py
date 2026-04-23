@@ -8,7 +8,7 @@ def pearson(y,f):
 rankingLossFunc = torch.nn.MarginRankingLoss(margin=0.0, reduction='mean')
 
 df = pd.read_csv("data/test.csv")
-print("Statistical indicators in Fig. 2d:")
+print("Statistical indicators in Fig. 3d:")
 print(f"PCC: {pearson(df['affinity'], df['Predict'])}")
 print(f"RANK: {1-rankingLossFunc(torch.tensor(df['affinity']), torch.tensor(df['Predict']), torch.ones_like(torch.tensor(df['Predict']))).item()}")
-print("\nThe files for Figs. 2e and 2f are too large to display. Please run preprocess.py file to generate preprocessed data and then perform inference.")
+print("\nThe files for Figs. 3e and 3f are too large to display. Please run preprocess.py file to generate preprocessed data and then perform inference.")

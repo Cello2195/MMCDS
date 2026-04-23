@@ -121,8 +121,8 @@ def dateStr():
         .replace("_", "")
     )
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 if __name__ == "__main__":
     """select seed"""
     SEED = 42
@@ -261,6 +261,6 @@ if __name__ == "__main__":
         Y = np.array(Y)
         P = np.array(P)
         conf_matrix = confusion_matrix(Y, P)
-        print("Confusion Matrix in Fig. 2a:")
+        print("Confusion Matrix in Fig. 3a:")
         print(conf_matrix)
         print("\n")

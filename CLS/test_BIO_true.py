@@ -122,8 +122,8 @@ def dateStr():
         .replace("_", "")
     )
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 if __name__ == "__main__":
     """select seed"""
     SEED = 42
@@ -264,11 +264,11 @@ if __name__ == "__main__":
         conf_matrix = confusion_matrix(Y, P)
         S_ = 0.5 + 0.5 * ((np.array(S) - np.min(S)) / (np.max(S) - np.min(S)))
         S_ = sorted(S_, reverse=True)
-        print("Confusion Matrix in Fig. 2b:")
+        print("Confusion Matrix in Fig. 3b:")
         print(conf_matrix)
         print("\n")
 
-        print("Prediction Confidence Level in Fig. 2c")
+        print("Prediction Confidence Level in Fig. 3c")
         for idx, item in enumerate(S_):
             print(f"Molecule {idx+1}: {item}")
         print("\n")
